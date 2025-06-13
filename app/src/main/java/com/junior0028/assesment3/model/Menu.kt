@@ -5,5 +5,5 @@ data class Menu(
     val judul: String,
     val kategori: String,
     val asal: String,
-    val mine: Int
+    val mine: String
 )
