@@ -9,11 +9,14 @@ import okhttp3.RequestBody
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.DELETE
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 private const val BASE_URL = "https://restoran-api.michael-kaiser.my.id/api/"
@@ -41,10 +44,29 @@ interface MenuApiService {
         @Part image: MultipartBody.Part
     ): OpStatus
 
+    @Multipart
+    @POST("menu/{id_menu}")
+    suspend fun updateMenu(
+        @Header("Authorization") token: String,
+        @Path("id_menu") idMenu: Long,
+        @Part("judul") judul: RequestBody,
+        @Part("kategori") kategori: RequestBody,
+        @Part("asal") asal: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): OpStatus
+
     @DELETE("menu/{id_menu}")
     suspend fun deleteMenu(
         @Header("Authorization") token: String,
-        @Query("id") idMenu: Long
+        @Path("id_menu") idMenu: Long
+    ): OpStatus
+
+    @FormUrlEncoded
+    @POST("register")
+    suspend fun registerAkun(
+        @Field("name") nama: String,
+        @Field("email") email: String,
+        @Field("password") password: String
     ): OpStatus
 }
 
