@@ -1,7 +1,13 @@
 package com.junior0028.assesment3.ui.screen
 
+import android.content.ContentResolver
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,23 +29,42 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.junior0028.assesment3.R
+import com.junior0028.assesment3.model.Menu
+import com.junior0028.assesment3.network.MenuApi
 import com.junior0028.assesment3.ui.theme.Mobpro1Theme
 
 @Composable
-fun HewanDialog(
-    bitmap: Bitmap?,
+fun MenuDialog(
+    menu: Menu? = null,
     onDismissRequest: () -> Unit,
-    onConfirmation: (String, String) -> Unit
+    onConfirmation: (String, String, String, Bitmap?) -> Unit
 ) {
-    var nama by remember { mutableStateOf("") }
-    var namaLatin by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    var judul by remember { mutableStateOf("") }
+    var kategori by remember { mutableStateOf("") }
+    var asal by remember { mutableStateOf("") }
+
+    var bitmap: Bitmap? by remember { mutableStateOf(null) }
+    val launcher = rememberLauncherForActivityResult(CropImageContract()) {
+        bitmap = getCroppedImage(context.contentResolver, it)
+    }
 
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Card(
@@ -50,17 +75,48 @@ fun HewanDialog(
                 modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                )
+                if (menu != null && bitmap == null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(
+                                MenuApi.getImageUrl(menu.id_menu)
+                            )
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = stringResource(R.string.gambar, menu.judul),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.loading_img),
+                        error = painterResource(id = R.drawable.broken_img),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                    )
+                } else {
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap!!.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                        )
+                    }
+                }
+                OutlinedButton(
+                    onClick = {
+                        val options = CropImageContractOptions(
+                            null, CropImageOptions(
+                                imageSourceIncludeGallery = false,
+                                imageSourceIncludeCamera = true,
+                                fixAspectRatio = true
+                            )
+                        )
+                        launcher.launch(options)
+                    },
+                    modifier = Modifier.padding(top = 8.dp).fillMaxWidth()
+                ) {
+
+                }
 
                 OutlinedTextField(
-                    value = nama,
-                    onValueChange = { nama = it },
+                    value = judul,
+                    onValueChange = { judul = it },
                     label = { Text(text = stringResource(id = R.string.nama)) },
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions(
@@ -71,8 +127,20 @@ fun HewanDialog(
                 )
 
                 OutlinedTextField(
-                    value = namaLatin,
-                    onValueChange = { namaLatin = it },
+                    value = kategori,
+                    onValueChange = { kategori = it },
+                    label = { Text(text = stringResource(id = R.string.nama_latin)) },
+                    maxLines = 1,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Done
+                    ),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                OutlinedTextField(
+                    value = asal,
+                    onValueChange = { asal = it },
                     label = { Text(text = stringResource(id = R.string.nama_latin)) },
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions(
@@ -96,8 +164,8 @@ fun HewanDialog(
                     }
 
                     OutlinedButton(
-                        onClick = { onConfirmation(nama, namaLatin) },
-                        enabled = nama.isNotEmpty() && namaLatin.isNotEmpty(),
+                        onClick = { onConfirmation(judul, kategori, asal, bitmap) },
+                        enabled = judul.isNotEmpty() && kategori.isNotEmpty(),
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Text(text = stringResource(R.string.simpan))
@@ -107,15 +175,35 @@ fun HewanDialog(
         }
     }
 }
+
+private fun getCroppedImage(
+    resolver: ContentResolver,
+    result: CropImageView.CropResult
+): Bitmap? {
+    if (!result.isSuccessful) {
+        Log.e("IMAGE", "Error: ${result.error}")
+        return null
+    }
+
+    val uri = result.uriContent ?: return null
+
+    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        MediaStore.Images.Media.getBitmap(resolver, uri)
+    } else {
+        val source = ImageDecoder.createSource(resolver, uri)
+        ImageDecoder.decodeBitmap(source)
+    }
+}
+
 @Preview(showBackground = true)
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 fun AddDialogPreview() {
     Mobpro1Theme {
-        HewanDialog(
-            bitmap = null,
+        MenuDialog(
+            menu = null,
             onDismissRequest = {},
-            onConfirmation = { _, _ -> }
+            onConfirmation = { _, _, _, _ -> }
         )
     }
 }
