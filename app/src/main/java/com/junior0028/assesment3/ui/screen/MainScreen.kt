@@ -121,7 +121,7 @@ fun MainScreen() {
                     IconButton(onClick = {
                         if (user.token.isEmpty()) {
                             CoroutineScope(Dispatchers.IO).launch {
-                                signIn(context, dataStore)
+                                signIn(viewModel, context, dataStore)
                             }
                         } else {
 //                            Log.d("SIGN-IN", "User: $user")
@@ -252,7 +252,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, onDeleteClick: (Menu
     }
 }
 
-private suspend fun signIn(context: Context, dataStore: UserDataStore) {
+private suspend fun signIn(viewModel: MainViewModel, context: Context, dataStore: UserDataStore) {
     val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)
         .setServerClientId(BuildConfig.API_KEY)
@@ -264,13 +264,13 @@ private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     try {
         val credentialManager = CredentialManager.create(context)
         val result = credentialManager.getCredential(context, request)
-        handleSignIn(result, dataStore)
+        handleSignIn(viewModel, result, dataStore)
     } catch (e: GetCredentialException) {
         Log.e("SIGN-IN", "Error: ${e.errorMessage}")
     }
 }
 
-private suspend fun handleSignIn(result: GetCredentialResponse, dataStore: UserDataStore) {
+private suspend fun handleSignIn(viewModel: MainViewModel, result: GetCredentialResponse, dataStore: UserDataStore) {
     val credential = result.credential
     if (credential is CustomCredential &&
         credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
@@ -279,13 +279,25 @@ private suspend fun handleSignIn(result: GetCredentialResponse, dataStore: UserD
             val nama = googleId.displayName ?: ""
             val email = googleId.id
             val photoUrl = googleId.profilePictureUri.toString()
-            dataStore.saveData(
-                User(
-                    name = nama,
-                    email = email,
-                    photoUrl = photoUrl
+            val token = googleId.idToken
+            if (token.isNotEmpty()) {
+                val tokenApi = viewModel.register(nama, email, token)
+
+                if (tokenApi.isEmpty()) {
+                    Log.e("SIGN-IN", "Error: registration gagal")
+                    return
+                }
+
+                dataStore.saveData(
+                    User(
+                        token = "Bearer $tokenApi",
+                        name = nama,
+                        email = email,
+                        photoUrl = photoUrl
+                    )
                 )
-            )
+                Log.d("SIGN-IN", "Success: $nama, $email, $photoUrl")
+            }
         } catch (e: GoogleIdTokenParsingException) {
             Log.e("SIGN-IN", "Error: ${e.message}")
         }
