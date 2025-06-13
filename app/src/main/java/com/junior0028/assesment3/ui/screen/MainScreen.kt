@@ -382,6 +382,12 @@ fun ListItem(
                     fontSize = 14.sp,
                     color = Color.White
                 )
+                Text(
+                    text = menu.asal,
+                    fontStyle = FontStyle.Italic,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
             }
 
             if (onDeleteClick != null) {
