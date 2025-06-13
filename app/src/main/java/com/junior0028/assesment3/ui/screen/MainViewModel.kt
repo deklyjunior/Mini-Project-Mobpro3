@@ -61,16 +61,18 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    fun saveData(token: String, idMenu: Long, judul: String, kategori: String, asal: String, bitmap: Bitmap) {
+    fun updateData(token: String, idMenu: Long, judul: String, kategori: String, asal: String, bitmap: Bitmap?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val imagePart = bitmap?.toMultipartBody()
                 val result = MenuApi.service.updateMenu(
                     token,
                     idMenu,
+                    "PUT".toRequestBody("text/plain".toMediaTypeOrNull()),
                     judul.toRequestBody("text/plain".toMediaTypeOrNull()),
                     kategori.toRequestBody("text/plain".toMediaTypeOrNull()),
                     asal.toRequestBody("text/plain".toMediaTypeOrNull()),
-                    bitmap.toMultipartBody()
+                    imagePart
                 )
 
                 if (result.status == "success")
