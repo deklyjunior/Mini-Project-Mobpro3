@@ -25,7 +25,7 @@ private val retrofit = Retrofit.Builder()
     .baseUrl(BASE_URL)
     .build()
 
-interface HewanApiService {
+interface MenuApiService {
     @GET("menu")
     suspend fun getMenu(
         @Header("Authorization") token: String
@@ -35,15 +35,16 @@ interface HewanApiService {
     @POST("menu")
     suspend fun postMenu(
         @Header("Authorization") token: String,
-        @Part("nama") nama: RequestBody,
-        @Part("namaLatin") namaLatin: RequestBody,
+        @Part("judul") judul: RequestBody,
+        @Part("kategori") kategori: RequestBody,
+        @Part("asal") asal: RequestBody,
         @Part image: MultipartBody.Part
     ): OpStatus
 
     @DELETE("menu/{id_menu}")
-    suspend fun deleteHewan(
+    suspend fun deleteMenu(
         @Header("Authorization") token: String,
-        @Query("id") id: String
+        @Query("id") idMenu: Long
     ): OpStatus
 }
 
