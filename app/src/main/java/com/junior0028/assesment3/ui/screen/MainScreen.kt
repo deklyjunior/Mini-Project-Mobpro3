@@ -78,7 +78,7 @@ import com.junior0028.assesment3.R
 import com.junior0028.assesment3.model.Menu
 import com.junior0028.assesment3.model.User
 import com.junior0028.assesment3.network.ApiStatus
-import com.junior0028.assesment3.network.HewanApi
+import com.junior0028.assesment3.network.MenuApi
 import com.junior0028.assesment3.network.UserDataStore
 import com.junior0028.assesment3.ui.theme.Mobpro1Theme
 import kotlinx.coroutines.CoroutineScope
@@ -95,13 +95,8 @@ fun MainScreen() {
     val errorMessage by viewModel.errorMessage
 
     var showDialog by remember { mutableStateOf(false) }
-    var showHewanDialog by remember { mutableStateOf(false) }
+    var showMenuDialog by remember { mutableStateOf(false) }
 
-    var bitmap: Bitmap? by remember { mutableStateOf(null) }
-    val launcher = rememberLauncherForActivityResult(CropImageContract()) {
-        bitmap = getCroppedImage(context.contentResolver, it)
-        if (bitmap != null) showHewanDialog = true
-    }
     val deleteStatus by viewModel.deleteStatus
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedMenu by remember { mutableStateOf<Menu?>(null) }
@@ -124,7 +119,7 @@ fun MainScreen() {
                 ),
                 actions = {
                     IconButton(onClick = {
-                        if (user.email.isEmpty()) {
+                        if (user.token.isEmpty()) {
                             CoroutineScope(Dispatchers.IO).launch {
                                 signIn(context, dataStore)
                             }
@@ -145,16 +140,7 @@ fun MainScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                val options = CropImageContractOptions(
-                    null,
-                    CropImageOptions(
-                        imageSourceIncludeGallery = false,
-                        imageSourceIncludeCamera = true,
-                        fixAspectRatio = true
-                    )
-                )
-
-                launcher.launch(options)
+                showMenuDialog = true
             }) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -162,14 +148,13 @@ fun MainScreen() {
                 )
             }
         }
-    ){
-            innerPadding ->
+    ){ innerPadding ->
         ScreenContent(
             viewModel,
-            userId = user.email,
+            userId = user.token,
             modifier = Modifier.padding(innerPadding),
-            onDeleteClick = { hewan ->
-                selectedMenu = hewan
+            onDeleteClick = { menu ->
+                selectedMenu = menu
                 showDeleteDialog = true
             }
         )
@@ -184,12 +169,12 @@ fun MainScreen() {
                 showDialog = false
             }
         }
-        if (showHewanDialog) {
-            HewanDialog(
-                bitmap = bitmap,
-                onDismissRequest = { showHewanDialog = false }) { nama, namaLatin ->
-                viewModel.saveData(user.email, nama, namaLatin, bitmap!!)
-                showHewanDialog = false
+        if (showMenuDialog) {
+            MenuDialog(
+                menu = null,
+                onDismissRequest = { showMenuDialog = false }) { judul, kategori, asal, bitmap ->
+                viewModel.saveData(user.token, judul, kategori, asal, bitmap!!)
+                showMenuDialog = false
             }
         }
         if (showDeleteDialog && selectedMenu != null) {
@@ -200,7 +185,7 @@ fun MainScreen() {
                     selectedMenu = null
                 },
                 onConfirm = {
-                    viewModel.deleteData(user.email, selectedMenu!!.id)
+                    viewModel.deleteData(user.token, selectedMenu!!.id_menu)
                     showDeleteDialog = false
                     selectedMenu = null
                 }
@@ -240,7 +225,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, onDeleteClick: (Menu
                 items(data) {
                     ListItem(
                         menu = it,
-                        onDeleteClick = if (it.mine == 1) { // Hanya untuk hewan milik user
+                        onDeleteClick = if (it.mine == 1) { // Hanya untuk menu milik user
                             { onDeleteClick(it) }
                         } else null
                     )
@@ -321,25 +306,6 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
     }
 }
 
-private fun getCroppedImage(
-    resolver: ContentResolver,
-    result: CropImageView.CropResult
-): Bitmap? {
-    if (!result.isSuccessful) {
-        Log.e("IMAGE", "Error: ${result.error}")
-        return null
-    }
-
-    val uri = result.uriContent ?: return null
-
-    return if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-        MediaStore.Images.Media.getBitmap(resolver, uri)
-    } else {
-        val source = ImageDecoder.createSource(resolver, uri)
-        ImageDecoder.decodeBitmap(source)
-    }
-}
-
 @Composable
 fun ListItem(
     menu: Menu,
@@ -354,11 +320,11 @@ fun ListItem(
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(
-                    HewanApi.getHewanUrl(menu.imageId)
+                    MenuApi.getImageUrl(menu.id_menu)
                 )
                 .crossfade(enable = true)
                 .build(),
-            contentDescription = stringResource(R.string.gambar, menu.nama),
+            contentDescription = stringResource(R.string.gambar, menu.judul),
             contentScale = ContentScale.Crop,
             placeholder = painterResource(id = R.drawable.loading_img),
             error = painterResource(id = R.drawable.baseline_broken_image_24),
@@ -377,12 +343,12 @@ fun ListItem(
                 modifier = Modifier.align(Alignment.CenterStart)
             ) {
                 Text(
-                    text = menu.nama,
+                    text = menu.judul,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
                 Text(
-                    text = menu.namaLatin,
+                    text = menu.kategori,
                     fontStyle = FontStyle.Italic,
                     fontSize = 14.sp,
                     color = Color.White
