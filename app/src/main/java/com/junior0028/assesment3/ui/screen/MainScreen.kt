@@ -1,21 +1,17 @@
 package com.junior0028.assesment3.ui.screen
 
-import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -66,10 +62,6 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -151,7 +143,7 @@ fun MainScreen() {
     ){ innerPadding ->
         ScreenContent(
             viewModel,
-            userId = user.token,
+            token = user.token,
             modifier = Modifier.padding(innerPadding),
             onDeleteClick = { menu ->
                 selectedMenu = menu
@@ -199,14 +191,25 @@ fun MainScreen() {
 }
 
 @Composable
-fun ScreenContent(viewModel: MainViewModel, userId: String, onDeleteClick: (Menu) -> Unit, modifier: Modifier = Modifier) {
+fun ScreenContent(viewModel: MainViewModel, token: String, onDeleteClick: (Menu) -> Unit, modifier: Modifier = Modifier) {
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
+    var showUpdateDialog by remember { mutableStateOf<Menu?>(null) }
 
-    LaunchedEffect(userId) {
-        viewModel.retrieveData(userId)
+    LaunchedEffect(token) {
+        viewModel.retrieveData(token)
     }
 
+    if (showUpdateDialog != null) {
+        MenuDialog(
+            menu = showUpdateDialog!!,
+            onDismissRequest = { showUpdateDialog = null }
+        ) { judul, kategori, asal, bitmap ->
+            viewModel.updateData(token, showUpdateDialog!!.id_menu, judul, kategori, asal, bitmap)
+            showUpdateDialog = null
+        }
+    }
+    
     when(status){
         ApiStatus.LOADING -> {
             Box(
@@ -225,10 +228,12 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, onDeleteClick: (Menu
                 items(data) {
                     ListItem(
                         menu = it,
-                        onDeleteClick = if (it.mine == 1) { // Hanya untuk menu milik user
+                        onDeleteClick = if (it.mine == "1") { // Hanya untuk menu milik user
                             { onDeleteClick(it) }
                         } else null
-                    )
+                    ) {
+                        showUpdateDialog = it
+                    }
                 }
             }
         }
@@ -240,7 +245,7 @@ fun ScreenContent(viewModel: MainViewModel, userId: String, onDeleteClick: (Menu
             ) {
                 Text(text = stringResource(id = R.string.error))
                 Button(
-                    onClick = {viewModel.retrieveData(userId)},
+                    onClick = {viewModel.retrieveData(token)},
                     modifier = Modifier.padding(top = 16.dp),
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
                 ) {
@@ -321,11 +326,18 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
 @Composable
 fun ListItem(
     menu: Menu,
-    onDeleteClick: (() -> Unit)? = null
+    onDeleteClick: (() -> Unit)? = null,
+    onClick : () -> Unit
 ) {
+
     Box(
         modifier = Modifier
             .padding(4.dp)
+            .clickable {
+                if (menu.mine == "1") {
+                    onClick()
+                }
+            }
             .border(1.dp, Color.Gray),
         contentAlignment = Alignment.BottomCenter
     ) {
@@ -342,6 +354,7 @@ fun ListItem(
             error = painterResource(id = R.drawable.baseline_broken_image_24),
             modifier = Modifier
                 .fillMaxWidth()
+                .aspectRatio(1f)
                 .padding(4.dp)
         )
         Box(
