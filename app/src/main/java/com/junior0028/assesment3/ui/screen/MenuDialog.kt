@@ -66,6 +66,12 @@ fun MenuDialog(
         bitmap = getCroppedImage(context.contentResolver, it)
     }
 
+    if (menu != null) {
+        judul = menu.judul
+        kategori = menu.kategori
+        asal = menu.asal
+    }
+
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Card(
             modifier = Modifier.padding(16.dp),
@@ -165,7 +171,7 @@ fun MenuDialog(
 
                     OutlinedButton(
                         onClick = { onConfirmation(judul, kategori, asal, bitmap) },
-                        enabled = judul.isNotEmpty() && kategori.isNotEmpty(),
+                        enabled = judul.isNotEmpty() && kategori.isNotEmpty() && asal.isNotEmpty() && (menu != null || bitmap != null),
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Text(text = stringResource(R.string.simpan))
