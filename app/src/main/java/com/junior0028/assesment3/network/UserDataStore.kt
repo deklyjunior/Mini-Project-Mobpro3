@@ -35,7 +35,7 @@ class UserDataStore(private val context: Context) {
     suspend fun saveData(user: User) {
         context.dataStore.edit {
             preferences ->
-            preferences[USER_NAME] = user.token
+            preferences[USER_TOKEN] = user.token
             preferences[USER_NAME] = user.name
             preferences[USER_EMAIL] = user.email
             preferences[USER_PHOTO] = user.photoUrl
