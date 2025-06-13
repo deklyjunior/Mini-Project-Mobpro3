@@ -17,7 +17,6 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 private const val BASE_URL = "https://restoran-api.michael-kaiser.my.id/api/"
 private val moshi = Moshi.Builder()
@@ -49,6 +48,7 @@ interface MenuApiService {
     suspend fun updateMenu(
         @Header("Authorization") token: String,
         @Path("id_menu") idMenu: Long,
+        @Part("_method") method: RequestBody,
         @Part("judul") judul: RequestBody,
         @Part("kategori") kategori: RequestBody,
         @Part("asal") asal: RequestBody,
@@ -76,7 +76,7 @@ object MenuApi {
     }
 
     fun getImageUrl(id: Long): String {
-        return "${BASE_URL}menu/image/$id"
+        return "${BASE_URL}menu/image/$id?timestamp=${System.currentTimeMillis()}"
     }
 }
 enum class ApiStatus { LOADING, SUCCESS, FAILED}
