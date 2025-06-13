@@ -29,7 +29,9 @@ import com.junior0028.assesment3.R
 import com.junior0028.assesment3.model.User
 import com.junior0028.assesment3.ui.theme.Mobpro1Theme
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
 
 
 @Composable
@@ -56,7 +58,7 @@ fun ProfilDialog(
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(id = R.drawable.loading_img),
                     error = painterResource(id = R.drawable.baseline_broken_image_24),
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(100.dp).clip(CircleShape)
                 )
                 Text(
                     text = user.name,
