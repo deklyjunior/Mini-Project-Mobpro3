@@ -6,12 +6,14 @@
     <string name="profile">Profil</string>
     <string name="tutup">Tutup</string>
     <string name="logout">Logout</string>
-    <string name="tambah_hewan">Tambah Hewan</string>
-    <string name="nama">Nama</string>
-    <string name="nama_latin">Nama latin</string>
+    <string name="tambah_menu">Tambah Menu</string>
+    <string name="judul">Judul</string>
+    <string name="kategori">Kategori</string>
+    <string name="asal">Asal</string>
+    <string name="pilih_gambar">Pilih Gambar</string>
     <string name="batal">Batal</string>
     <string name="simpan">Simpan</string>
-    <string name="hapus_hewan_title">Hapus Hewan</string>
-    <string name="hapus_hewan_body">Apakah Anda yakin ingin menghapus %1$s?</string>
+    <string name="hapus_menu_title">Hapus Menu</string>
+    <string name="hapus_menu_body">Apakah Anda yakin ingin menghapus %1$s?</string>
     <string name="hapus">Hapus</string>
 </resources>

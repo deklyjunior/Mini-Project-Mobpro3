@@ -17,10 +17,10 @@ fun DeleteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = stringResource(R.string.hapus_hewan_title))
+            Text(text = stringResource(R.string.hapus_menu_title))
         },
         text = {
-            Text(text = stringResource(R.string.hapus_hewan_body, menu.judul))
+            Text(text = stringResource(R.string.hapus_menu_body, menu.judul))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
