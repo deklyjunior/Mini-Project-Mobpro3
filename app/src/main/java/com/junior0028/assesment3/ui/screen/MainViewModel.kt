@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.junior0028.assesment3.model.Menu
 import com.junior0028.assesment3.network.ApiStatus
-import com.junior0028.assesment3.network.HewanApi
+import com.junior0028.assesment3.network.MenuApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -26,11 +26,11 @@ class MainViewModel: ViewModel() {
     var deleteStatus = mutableStateOf<String?>(null)
         private set
 
-    fun retrieveData(userId: String) {
+    fun retrieveData(token: String) {
         viewModelScope.launch(Dispatchers.IO) {
             status.value = ApiStatus.LOADING
             try {
-                data.value = HewanApi.service.getMenu(userId)
+                data.value = MenuApi.service.getMenu(token)
                 status.value = ApiStatus.SUCCESS
             } catch (e: Exception) {
                 Log.d("MainViewModel", "Failure: ${e.message}")
@@ -39,18 +39,19 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    fun saveData(userId: String, nama: String, namaLatin: String, bitmap: Bitmap) {
+    fun saveData(token: String, judul: String, kategori: String, asal: String, bitmap: Bitmap) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val result = HewanApi.service.postMenu(
-                    userId,
-                    nama.toRequestBody("text/plain".toMediaTypeOrNull()),
-                    namaLatin.toRequestBody("text/plain".toMediaTypeOrNull()),
+                val result = MenuApi.service.postMenu(
+                    token,
+                    judul.toRequestBody("text/plain".toMediaTypeOrNull()),
+                    kategori.toRequestBody("text/plain".toMediaTypeOrNull()),
+                    asal.toRequestBody("text/plain".toMediaTypeOrNull()),
                     bitmap.toMultipartBody()
                 )
 
                 if (result.status == "success")
-                    retrieveData(userId)
+                    retrieveData(token)
                 else
                     throw Exception(result.message)
             } catch (e: Exception) {
@@ -60,12 +61,12 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    fun deleteData(userId: String, hewanId: String) {
+    fun deleteData(token: String, idMenu: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val result = HewanApi.service.deleteHewan(userId, hewanId)
+                val result = MenuApi.service.deleteMenu(token, idMenu)
                 if (result.status == "success") {
-                    retrieveData(userId)
+                    retrieveData(token)
                 } else {
                     deleteStatus.value = result.message ?: "Gagal menghapus data"
                 }
