@@ -61,6 +61,29 @@ class MainViewModel: ViewModel() {
         }
     }
 
+    fun saveData(token: String, idMenu: Long, judul: String, kategori: String, asal: String, bitmap: Bitmap) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = MenuApi.service.updateMenu(
+                    token,
+                    idMenu,
+                    judul.toRequestBody("text/plain".toMediaTypeOrNull()),
+                    kategori.toRequestBody("text/plain".toMediaTypeOrNull()),
+                    asal.toRequestBody("text/plain".toMediaTypeOrNull()),
+                    bitmap.toMultipartBody()
+                )
+
+                if (result.status == "success")
+                    retrieveData(token)
+                else
+                    throw Exception(result.message)
+            } catch (e: Exception) {
+                Log.d("MainViewModel", "Failure: ${e.message}")
+                errorMessage.value = "Error: ${e.message}"
+            }
+        }
+    }
+
     fun deleteData(token: String, idMenu: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -75,6 +98,25 @@ class MainViewModel: ViewModel() {
                 deleteStatus.value = "Terjadi kesalahan: ${e.message}"
             }
         }
+    }
+
+    suspend fun register(nama: String, email: String, password: String): String {
+        var token = ""
+        try {
+            val result = MenuApi.service.registerAkun(
+                nama,
+                email,
+                password
+            )
+
+            if (result.status == "success") {
+                token = result.data ?: ""
+            }
+        } catch (e: Exception) {
+            Log.e("MainViewModel", "Failure: ${e.message}")
+        }
+
+        return token
     }
 
     fun clearDeleteStatus() {
